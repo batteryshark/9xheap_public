@@ -18,28 +18,43 @@ PVOID NTAPI h_RtlAllocateHeap(IN HANDLE HeapHandle, IN ULONG Flags, IN SIZE_T Si
 }
 
 PVOID NTAPI h_RtlReAllocateHeap(IN HANDLE HeapHandle, IN ULONG Flags, IN LPVOID Address, IN SIZE_T Size) {
-    if (_IsOurHeap(HeapHandle)) {
-        return HeapReAlloc(HeapHandle, Flags, Address, Size);
+    LPVOID uRet = NULL;
+    HeapHandle = FixHeap(HeapHandle, Address);
+    if (UseOurHeap(HeapHandle, Address)) {
+        uRet = _HeapReAlloc(HeapHandle, Flags, Address, Size);
     }
     else {
-        return o_RtlReAllocateHeap ? o_RtlReAllocateHeap(HeapHandle, Flags, Address, Size) : NULL;
+        if (ValidateNTHeap(HeapHandle, Address)) {
+            uRet = o_RtlReAllocateHeap(HeapHandle, Flags, Address, Size);
+        }
     }
+    return uRet;
 }
 
 BOOLEAN NTAPI h_RtlFreeHeap(IN HANDLE HeapHandle, IN ULONG Flags, IN PVOID Address) {
-    if (_IsOurHeap(HeapHandle)) {
-        return HeapFree(HeapHandle, Flags, Address);
+    BOOL bRet = FALSE;
+    HeapHandle = FixHeap(HeapHandle, Address);
+    if (UseOurHeap(HeapHandle, Address)) {
+        bRet = _HeapFree(HeapHandle, Flags, Address);
     }
     else {
-        return o_RtlFreeHeap ? o_RtlFreeHeap(HeapHandle, Flags, Address) : FALSE;
+        if (ValidateNTHeap(HeapHandle, Address)) {
+            bRet = o_RtlFreeHeap(HeapHandle, Flags, Address);
+        }
     }
+    return bRet;
 }
 
 SIZE_T NTAPI h_RtlSizeHeap(IN HANDLE HeapHandle, IN ULONG Flags, IN PVOID Address) {
-    if (_IsOurHeap(HeapHandle)) {
-        return HeapSize(HeapHandle, Flags, Address);
+    SIZE_T bRet = 0;
+    HeapHandle = FixHeap(HeapHandle, Address);
+    if (UseOurHeap(HeapHandle, Address)) {
+        bRet = _HeapSize(HeapHandle, Flags, Address);
     }
     else {
-        return o_RtlSizeHeap ? o_RtlSizeHeap(HeapHandle, Flags, Address) : 0;
+        if (ValidateNTHeap(HeapHandle, Address)) {
+            bRet = o_RtlSizeHeap(HeapHandle, Flags, Address);
+        }
     }
+    return bRet;
 }
