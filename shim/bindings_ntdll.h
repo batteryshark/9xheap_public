@@ -1,5 +1,7 @@
 #pragma once
 
+#include "mingw_compat.h"
+
 typedef PVOID NTAPI tRtlAllocateHeap(IN HANDLE HeapHandle, IN ULONG Flags, IN SIZE_T Size);
 typedef PVOID NTAPI tRtlReAllocateHeap(IN HANDLE HeapHandle, IN ULONG Flags, IN LPVOID Address, IN SIZE_T Size);
 typedef BOOLEAN NTAPI tRtlFreeHeap(IN HANDLE HeapHandle, IN ULONG Flags, IN PVOID Address);

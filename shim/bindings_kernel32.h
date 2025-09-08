@@ -1,4 +1,5 @@
 #pragma once
+#include "mingw_compat.h"
 
 typedef HANDLE __stdcall tHeapCreate(DWORD  flOptions,SIZE_T dwInitialSize,SIZE_T dwMaximumSize);
 typedef BOOL __stdcall tHeapDestroy(HANDLE hHeap);

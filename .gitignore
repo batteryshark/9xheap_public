@@ -1,0 +1,25 @@
+# MinGW build directories
+build/
+dist/
+
+# Legacy scattered artifacts (shouldn't exist with new structure)
+*.o
+*.a
+*.dll.a
+lib*.dll.a
+
+# MSBuild artifacts (legacy - should be deleted)
+*.vcxproj
+*.vcxproj.user
+*.vcxproj.filters
+Release/
+Debug/
+*.obj
+*.pdb
+*.log
+*.tlog/
+
+# Temporary files
+*~
+*.tmp
+*.temp
