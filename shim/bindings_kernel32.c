@@ -43,9 +43,9 @@ BOOL __stdcall h_HeapDestroy(HANDLE hHeap) {
 }
 
 BOOL __stdcall h_HeapValidate(HANDLE hHeap, DWORD dwFlags, LPCVOID lpMem) {
+    hHeap = FixHeap(hHeap, lpMem);
     if (UseOurHeap(hHeap, lpMem)) {
-        // Use the working code's fallback approach
-        return TRUE; // Our heap is always valid
+        return TRUE;
     }
     return o_HeapValidate ? o_HeapValidate(hHeap, dwFlags, lpMem) : FALSE;
 }
