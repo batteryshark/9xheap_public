@@ -19,21 +19,21 @@
 
 #define HPNOTTRUSTED 1	/* enable parameter checking */
 
- /***LT	busyblock_s - busy heap block header structure
-  *
-  *	This structure is stored at the head of every busy (not free) heap
-  *	block.
-  *
-  *	The bh_size field is in bytes and includes the size of the
-  *	heap header and any slop at the end of the block that might have
-  *	been included because of the heap granularity, or to keep us
-  *	from leaving a block too small to hold a free heap header.
-  *
-  *	bh_size is also used as a forward link to the next heap block.
-  *
-  *	The low two bits of the bh_size field are used to hold flags
-  *	(BP_FREE must be clear and HP_PREVFREE is optionally set).
-  */
+/***LT	busyblock_s - busy heap block header structure
+ *
+ *	This structure is stored at the head of every busy (not free) heap
+ *	block.
+ *
+ *	The bh_size field is in bytes and includes the size of the
+ *	heap header and any slop at the end of the block that might have
+ *	been included because of the heap granularity, or to keep us
+ *	from leaving a block too small to hold a free heap header.
+ *
+ *	bh_size is also used as a forward link to the next heap block.
+ *
+ *	The low two bits of the bh_size field are used to hold flags
+ *	(BP_FREE must be clear and HP_PREVFREE is optionally set).
+ */
 #ifndef HPDEBUG
 struct busyheap_s {
 	unsigned long	bh_size;	/* block size + flags in low 2 bits */
@@ -74,16 +74,16 @@ struct busyheap_s {
 #ifndef HPDEBUG
 struct freeheap_s {
 	unsigned long	   fh_size;	/* block size + flags in low 2 bits */
-	struct freeheap_s* fh_flink;	/* forward link to next free block */
-	struct freeheap_s* fh_blink;	/* back link to previous free block */
+	struct freeheap_s *fh_flink;	/* forward link to next free block */
+	struct freeheap_s *fh_blink;	/* back link to previous free block */
 };
 #else
 struct freeheap_s {
 	unsigned long	   fh_size;	/* block size + flags in low 2 bits */
-	struct freeheap_s* fh_flink;	/* forward link to next free block */
+	struct freeheap_s *fh_flink;	/* forward link to next free block */
 	unsigned short	   fh_pad;	/* unused */
 	unsigned short	   fh_signature;/* signature (should be FH_SIGNATURE)*/
-	struct freeheap_s* fh_blink;	/* back link to previous free block */
+	struct freeheap_s *fh_blink;	/* back link to previous free block */
 	unsigned long	   fh_sum;	/* checksum of this structure */
 };
 #endif
@@ -108,12 +108,12 @@ struct freeheap_s {
 #define HP_SIGBITS	0xf0000000	/* bits used for signature */
 #define HP_SIGNATURE	0xa0000000	/* valid value of signature */
 
- /*
-  *	Misc heap equates
-  */
+/*
+ *	Misc heap equates
+ */
 #define hpGRANULARITY	4		/* granularity for heap allocations */
 #define hpGRANMASK	(hpGRANULARITY - 1)		/* for rounding */
-  /*XLATOFF*/
+/*XLATOFF*/
 #define hpMINSIZE	(sizeof(struct freeheap_s)+sizeof(struct freeheap_s *))
 			/* min block size */
 
@@ -152,114 +152,114 @@ struct freeheap_s {
 #endif
 #define HP_FIXED	0x00	/* block is at a fixed address (HPAlloc) */
 #define HP_GROWABLE	0x40	/* heap can grow beyond cbreserve (HPInit) */
- /*
-  *  Note that flags above 0x80 will not be stored into the heap header in
-  *  HPInit calls because the flags field in the header is only a byte
-  */
+/*
+ *  Note that flags above 0x80 will not be stored into the heap header in
+ *  HPInit calls because the flags field in the header is only a byte
+ */
 #define HP_INITSEGMENT 0x100	/* just initialize a heap segment (HPInit) */
 #define HP_DECOMMIT    0x200	/* decommit pages in free block (hpFreeSub) */
 #define HP_GROWUP      0x400	/* waste last page of heap (HPInit) */
 
-  /*XLATOFF*/
+/*XLATOFF*/
 
-  /***LP	hpSize - pull size field from heap header
-   *
-   *	This routine depends on the size field being the first
-   *	dword in the header.
-   *
-   *	ENTRY:	ph - pointer to heap header
-   *	EXIT:	count of bytes in block (counting header).
-   */
+/***LP	hpSize - pull size field from heap header
+ *
+ *	This routine depends on the size field being the first
+ *	dword in the header.
+ *
+ *	ENTRY:	ph - pointer to heap header
+ *	EXIT:	count of bytes in block (counting header).
+ */
 #define hpSize(ph) (*((unsigned long *)(ph)) & HP_SIZE)
 
-   /***LP	hpSetSize - set the size parameter in a heap header
-	*
-	*	This routine depends on the size field being the first
-	*	dword in the header.
-	*
-	*	ENTRY:	ph - pointer to busy heap header
-	*		cb - count of bytes (should be rounded using hpRoundUp)
-	*	EXIT:	size is set in heap header
-	*/
+/***LP	hpSetSize - set the size parameter in a heap header
+ *
+ *	This routine depends on the size field being the first
+ *	dword in the header.
+ *
+ *	ENTRY:	ph - pointer to busy heap header
+ *		cb - count of bytes (should be rounded using hpRoundUp)
+ *	EXIT:	size is set in heap header
+ */
 #define hpSetSize(ph, cb) (((struct busyheap_s *)(ph))->bh_size =  \
 		     ((((struct busyheap_s *)(ph))->bh_size & ~HP_SIZE) | (cb)))
 
-	/* the compiler used to do a better version with this macro than the above,
-	 * but not any more
-	#define hpSetSize2(ph, cb) *(unsigned long *)(ph) &= ~HP_SIZE; \
-				   *(unsigned long *)(ph) |= (cb);
-	 */
+/* the compiler used to do a better version with this macro than the above,
+ * but not any more
+#define hpSetSize2(ph, cb) *(unsigned long *)(ph) &= ~HP_SIZE; \
+			   *(unsigned long *)(ph) |= (cb);
+ */
 
-	 /***LP	hpSetBusySize - set the entire bh_size dword for a busy block
-	  *
-	  *	This macro will set the bh_size field of the given heap header
-	  *	to the given size as well as setting the HP_SIGNATURE and clearing
-	  *	any HP_FREE or HP_PREVFREE bits.
-	  *
-	  *	ENTRY:	ph - pointer to busy heap header
-	  *		cb - count of bytes (should be rounded using hpRoundUp)
-	  *	EXIT:	bh_size field is initialized
-	  */
+/***LP	hpSetBusySize - set the entire bh_size dword for a busy block
+ *
+ *	This macro will set the bh_size field of the given heap header
+ *	to the given size as well as setting the HP_SIGNATURE and clearing
+ *	any HP_FREE or HP_PREVFREE bits.
+ *
+ *	ENTRY:	ph - pointer to busy heap header
+ *		cb - count of bytes (should be rounded using hpRoundUp)
+ *	EXIT:	bh_size field is initialized
+ */
 #define hpSetBusySize(ph, cb)	((ph)->bh_size = ((cb) | HP_SIGNATURE))
 
 
-	  /***LP	hpSetFreeSize - set the entire fh_size dword for a free block
-	   *
-	   *	This macro will set the fh_size field of the given heap header
-	   *	to the given size as well as setting the HP_SIGNATURE and HP_FREE
-	   *	and clearing HP_PREVFREE.
-	   *
-	   *	ENTRY:	ph - pointer to free heap header
-	   *		cb - count of bytes (should be rounded using hpRoundUp)
-	   *	EXIT:	bh_size field is initialized
-	   */
+/***LP	hpSetFreeSize - set the entire fh_size dword for a free block
+ *
+ *	This macro will set the fh_size field of the given heap header
+ *	to the given size as well as setting the HP_SIGNATURE and HP_FREE
+ *	and clearing HP_PREVFREE.
+ *
+ *	ENTRY:	ph - pointer to free heap header
+ *		cb - count of bytes (should be rounded using hpRoundUp)
+ *	EXIT:	bh_size field is initialized
+ */
 #define hpSetFreeSize(ph, cb)	((ph)->fh_size = ((cb) | HP_SIGNATURE | HP_FREE))
 
 
-	   /***LP	hpIsBusySignatureValid - check a busy heap block's signature
-		*
-		*	This macro checks the tiny signature (HP_SIGNATURE) in the bh_size
-		*	field to see if it is set properly and makes sure that the HP_FREE
-		*	bit is clear.
-		*
-		*	ENTRY:	ph - pointer to a busy heap header
-		*	EXIT:	TRUE if signature is ok, else FALSE
-		*/
+/***LP	hpIsBusySignatureValid - check a busy heap block's signature
+ *
+ *	This macro checks the tiny signature (HP_SIGNATURE) in the bh_size
+ *	field to see if it is set properly and makes sure that the HP_FREE
+ *	bit is clear.
+ *
+ *	ENTRY:	ph - pointer to a busy heap header
+ *	EXIT:	TRUE if signature is ok, else FALSE
+ */
 #define hpIsBusySignatureValid(ph) \
 		    (((ph)->bh_size & (HP_SIGBITS | HP_FREE)) == HP_SIGNATURE)
 
 
-		/***LP	hpIsFreeSignatureValid - check a free heap block's signature
-		 *
-		 *	This macro checks the tiny signature (HP_SIGNATURE) in the fh_size
-		 *	field to see if it is set properly and makes sure that the HP_FREE
-		 *	bit is also set and HP_PREVFREE is clear.
-		 *
-		 *	ENTRY:	ph - pointer to a free heap header
-		 *	EXIT:	TRUE if signature is ok, else FALSE
-		 */
+/***LP	hpIsFreeSignatureValid - check a free heap block's signature
+ *
+ *	This macro checks the tiny signature (HP_SIGNATURE) in the fh_size
+ *	field to see if it is set properly and makes sure that the HP_FREE
+ *	bit is also set and HP_PREVFREE is clear.
+ *
+ *	ENTRY:	ph - pointer to a free heap header
+ *	EXIT:	TRUE if signature is ok, else FALSE
+ */
 #define hpIsFreeSignatureValid(ph) \
 	  (((ph)->fh_size & (HP_SIGBITS | HP_FREE | HP_PREVFREE)) == \
 						     (HP_SIGNATURE | HP_FREE))
 
 
-		 /***LP	hpRoundUp - round up byte count to appropriate heap block size
-		  *
-		  *	Heap blocks have a minimum size of hpMINSIZE and hpGRANULARITY
-		  *	granularity.  This macro also adds on size for the heap header.
-		  *
-		  *	ENTRY:	cb - count of bytes
-		  *	EXIT:	count rounded up to hpGANULARITY boundary
-		  */
+/***LP	hpRoundUp - round up byte count to appropriate heap block size
+ *
+ *	Heap blocks have a minimum size of hpMINSIZE and hpGRANULARITY
+ *	granularity.  This macro also adds on size for the heap header.
+ *
+ *	ENTRY:	cb - count of bytes
+ *	EXIT:	count rounded up to hpGANULARITY boundary
+ */
 #define hpRoundUp(cb)	\
       max(hpMINSIZE,	\
 	  (((cb) + sizeof(struct busyheap_s) + hpGRANMASK) & ~hpGRANMASK))
 
 
-		  /*XLATON*/
+/*XLATON*/
 
-		  /***LK	freelist_s - heap free list head
-		   */
+/***LK	freelist_s - heap free list head
+ */
 struct freelist_s {
 	unsigned long	  fl_cbmax;	/* max size block in this free list */
 	struct freeheap_s fl_header;	/* pseudo heap header as list head */
@@ -273,18 +273,18 @@ struct heapinfo_s {
 
 	/* These first three fields must match the fields of heapseg_s */
 	unsigned long	hi_cbreserve;		/* bytes reserved for heap */
-	struct heapseg_s* hi_psegnext;		/* pointer to next heap segment*/
+	struct heapseg_s *hi_psegnext;		/* pointer to next heap segment*/
 
 	struct freelist_s hi_freelist[hpFREELISTHEADS]; /* free list heads */
 #ifdef WIN32
-	struct heapinfo_s* hi_procnext; 	/* linked list of process heaps */
-	CRST* hi_pcritsec;                   /* pointer to serialization obj*/
+	struct heapinfo_s *hi_procnext; 	/* linked list of process heaps */
+        CRST    *hi_pcritsec;                   /* pointer to serialization obj*/
 	CRST    hi_critsec;		        /* serialize access to heap */
 #ifdef HPDEBUG
-	unsigned char	hi_matchring0[(76 - sizeof(CRST))]; /* pad so .mh command works */
+	unsigned char	hi_matchring0[(76-sizeof(CRST))]; /* pad so .mh command works */
 #endif
 #else
-	struct _MTX* hi_pcritsec;		/* pointer to serialization obj*/
+	struct _MTX    *hi_pcritsec;		/* pointer to serialization obj*/
 	struct _MTX	hi_critsec;		/* serialize access to heap */
 #endif
 #ifdef HPDEBUG
@@ -308,9 +308,9 @@ struct heapinfo_s {
 #define  SAMPLE_CACHE_SIZE 1024
 
 struct measure_s {
-	char  szFile[260];
-	unsigned iCur;
-	unsigned uSamples[SAMPLE_CACHE_SIZE];
+   char  szFile[260];
+   unsigned iCur;
+   unsigned uSamples[SAMPLE_CACHE_SIZE];
 };
 
 /*XLATOFF*/
@@ -319,7 +319,7 @@ struct measure_s {
 
 #define HI_CDWSUM  1		    /* count of dwords to sum */
 
-typedef struct heapinfo_s* HHEAP;
+typedef struct heapinfo_s *HHEAP;
 
 
 /***LK	heapseg_s - per-heap segment structure
@@ -332,7 +332,7 @@ typedef struct heapinfo_s* HHEAP;
  */
 struct heapseg_s {
 	unsigned long	hs_cbreserve;	/* bytes reserved for this segment */
-	struct heapseg_s* hs_psegnext;	/* pointer to next heap segment*/
+	struct heapseg_s *hs_psegnext;	/* pointer to next heap segment*/
 };
 /* XLATOFF */
 
@@ -359,12 +359,12 @@ struct heapseg_s {
 #define hpRemove(pfh)	hpRemoveNoSum(pfh)
 #endif
 
- /***LP	hpInsert - insert item onto the free list
-  *
-  *	ENTRY:	pfh - free heap block to insert onto the list
-  *		pfhprev - insert pfh after this item
-  *	EXIT:	none
-  */
+/***LP	hpInsert - insert item onto the free list
+ *
+ *	ENTRY:	pfh - free heap block to insert onto the list
+ *		pfhprev - insert pfh after this item
+ *	EXIT:	none
+ */
 #define hpInsertNoSum(pfh, pfhprev)		\
 	(pfh)->fh_flink = (pfhprev)->fh_flink;	\
 	(pfh)->fh_flink->fh_blink = (pfh);	\
@@ -385,20 +385,20 @@ struct heapseg_s {
 #define INTERNAL
 #endif
 
-  /*
-   * critical section macros to be used by all internal heap functions
-   */
+/*
+ * critical section macros to be used by all internal heap functions
+ */
 #ifndef WIN32
-#define hpEnterCriticalSection(hheap) mmEnterMutex(hheap->hi_pcritsec)
-#define hpLeaveCriticalSection(hheap) mmLeaveMutex(hheap->hi_pcritsec)
-#define hpInitializeCriticalSection(hheap) \
+    #define hpEnterCriticalSection(hheap) mmEnterMutex(hheap->hi_pcritsec)
+    #define hpLeaveCriticalSection(hheap) mmLeaveMutex(hheap->hi_pcritsec)
+    #define hpInitializeCriticalSection(hheap) \
         hheap->hi_pcritsec = &(hheap->hi_critsec); \
         mmInitMutex(hheap->hi_pcritsec)
 #else
-#define hpEnterCriticalSection(hheap) EnterCrst(hheap->hi_pcritsec)
-#define hpLeaveCriticalSection(hheap) LeaveCrst(hheap->hi_pcritsec)
-   //BUGBUG: removed special case hheapKernel code
-#define hpInitializeCriticalSection(hheap)              \
+    #define hpEnterCriticalSection(hheap) EnterCrst(hheap->hi_pcritsec)
+    #define hpLeaveCriticalSection(hheap) LeaveCrst(hheap->hi_pcritsec)
+    //BUGBUG: removed special case hheapKernel code
+    #define hpInitializeCriticalSection(hheap)              \
         {                                        \
             hheap->hi_pcritsec = &(hheap->hi_critsec);  \
             InitCrst(hheap->hi_pcritsec);               \
@@ -409,16 +409,16 @@ struct heapseg_s {
  * Exported heap functions
  */
 extern HHEAP INTERNAL HPInit(struct heapinfo_s* hheap, struct heapinfo_s* pmem, unsigned long cbreserve,
-	unsigned long flags);
-extern void* INTERNAL HPAlloc(HHEAP hheap, unsigned long cb,
-	unsigned long flags);
+			     unsigned long flags);
+extern void * INTERNAL HPAlloc(HHEAP hheap, unsigned long cb,
+			     unsigned long flags);
 
-extern void* INTERNAL HPReAlloc(HHEAP hheap, void* pblock, unsigned long cb,
-	unsigned long flags);
+extern void * INTERNAL HPReAlloc(HHEAP hheap, void *pblock, unsigned long cb,
+			       unsigned long flags);
 #ifndef WIN32
-extern unsigned INTERNAL HPFree(HHEAP hheap, void* lpMem);
-extern unsigned INTERNAL HPSize(HHEAP hheap, void* lpMem);
-extern HHEAP INTERNAL  HPClone(struct heapinfo_s* hheap, struct heapinfo_s* pmem);
+extern unsigned INTERNAL HPFree(HHEAP hheap, void *lpMem);
+extern unsigned INTERNAL HPSize(HHEAP hheap, void *lpMem);
+extern HHEAP INTERNAL  HPClone(struct heapinfo_s *hheap, struct heapinfo_s *pmem);
 #endif
 
 
@@ -426,15 +426,15 @@ extern HHEAP INTERNAL  HPClone(struct heapinfo_s* hheap, struct heapinfo_s* pmem
  * Local heap functions
  */
 extern void INTERNAL hpFreeSub(HHEAP hheap, struct freeheap_s* pblock, unsigned cb,
-	unsigned flags);
+			       unsigned flags);
 extern unsigned INTERNAL hpCommit(unsigned page, int npages, unsigned flags);
-extern unsigned INTERNAL hpCarve(HHEAP hheap, struct freeheap_s* pfh,
-	unsigned cb, unsigned flags);
+extern unsigned INTERNAL hpCarve(HHEAP hheap, struct freeheap_s *pfh,
+				unsigned cb, unsigned flags);
 #ifdef WIN32
 extern unsigned INTERNAL hpTakeSem(HHEAP hheap, struct busyheap_s* pbh, unsigned flags);
 extern void INTERNAL hpClearSem(HHEAP hheap, unsigned flags);
 #else
-extern unsigned INTERNAL hpTakeSem2(HHEAP hheap, void* pbh);
+extern unsigned INTERNAL hpTakeSem2(HHEAP hheap, void *pbh);
 extern void INTERNAL hpClearSem2(HHEAP hheap);
 #endif
 

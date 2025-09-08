@@ -7,31 +7,31 @@
     kernel32.h
 
  Abstract:
-
-    The heap manager is identical (exactly) to the Win9x heap manager. The code
-    is the same and the corresponding conversion code and defines are in
-    support.c and kernel32.h The exact win9x sources are in heap.c and lmem.c.
-    All the heap functions come in heap.c and the local/global functions come
+     
+    The heap manager is identical (exactly) to the Win9x heap manager. The code 
+    is the same and the corresponding conversion code and defines are in 
+    support.c and kernel32.h The exact win9x sources are in heap.c and lmem.c. 
+    All the heap functions come in heap.c and the local/global functions come 
     in lmem.c.
 
-    The SHIM code comes in EmulateHeap.cpp. This hooks the heap calls and calls
-    the Win9x code to emulate the Win9x heap. After the heap management by the
-    Win9x heap, the underneath calls to the Virtual memory functions are handled
-    in support.c. The only difference comes in the way Win9x handles 'SHARED'
-    and "PRIVATE' heaps.Win9x creates the process default heap as a SHARED heap
-    and uses it in kernel mode too. We also create it as a SHARED heap but do
-    not share it with the kernel. Win9x links all the PRIVATE heaps for the
-    process in the PDB data structure. We fake this structure with only the
+    The SHIM code comes in EmulateHeap.cpp. This hooks the heap calls and calls 
+    the Win9x code to emulate the Win9x heap. After the heap management by the 
+    Win9x heap, the underneath calls to the Virtual memory functions are handled 
+    in support.c. The only difference comes in the way Win9x handles 'SHARED' 
+    and "PRIVATE' heaps.Win9x creates the process default heap as a SHARED heap 
+    and uses it in kernel mode too. We also create it as a SHARED heap but do 
+    not share it with the kernel. Win9x links all the PRIVATE heaps for the 
+    process in the PDB data structure. We fake this structure with only the 
     required elements and allow the Win9x code to handle this structure.
-
+     
  Notes:
 
-    None.
+    None.    
 
  History:
-
-    11/16/2000 prashkud & linstev Created
-
+           
+    11/16/2000 prashkud & linstev Created 
+ 
 --*/
 
 #ifndef _KERNEL32_H_
@@ -106,8 +106,8 @@ extern ULONG PageReserve(ULONG page, ULONG npages, ULONG flags);
 #define PvKernelAlloc0(_x_) VirtualAlloc(0, _x_, MEM_COMMIT, PAGE_READWRITE)
 #define FKernelFree(_x_)    VirtualFree((LPVOID) _x_, 0, MEM_RELEASE)
 
-extern CRITICAL_SECTION* NewCrst();
-extern VOID DisposeCrst(CRITICAL_SECTION* lpcs);
+extern CRITICAL_SECTION *NewCrst();
+extern VOID DisposeCrst(CRITICAL_SECTION *lpcs);
 
 #define FillBytes(a, b, c)    memset(a, c, b)
 
@@ -143,13 +143,13 @@ extern VOID DisposeCrst(CRITICAL_SECTION* lpcs);
 
 // For lmem.c
 typedef struct _pdb {
-    struct heapinfo_s* hheapLocal;	// DON'T MOVE THIS!!! handle to heap in private memeory
-    struct lhandle_s* plhFree;		// Local heap free handle list head ptr
-    struct heapinfo_s* hhi_procfirst;	// linked list of heaps for this process
-    struct lharray_s* plhBlock;		// local heap lhandle blocks
-} PDB, * PPDB;
+    struct heapinfo_s *hheapLocal;	// DON'T MOVE THIS!!! handle to heap in private memeory
+    struct lhandle_s *plhFree;		// Local heap free handle list head ptr
+    struct heapinfo_s *hhi_procfirst;	// linked list of heaps for this process
+    struct lharray_s *plhBlock;		// local heap lhandle blocks
+} PDB, *PPDB;
 
-extern PDB** pppdbCur;
+extern PDB **pppdbCur;
 #define GetCurrentPdb() (*pppdbCur)
 
 extern HANDLE hheapKernel;
@@ -161,8 +161,8 @@ extern BOOL APIENTRY HeapFreeInternal(HHEAP hheap, DWORD flags, LPSTR lpMem);
 #define HEAP_LOCKED  0x00000080              // put heap in locked memory
 
 #ifdef WINBASEAPI 
-#undef WINBASEAPI 
-#define WINBASEAPI 
+    #undef WINBASEAPI 
+    #define WINBASEAPI 
 #endif
 
 extern BOOL _IsOurHeap(HANDLE hHeap);

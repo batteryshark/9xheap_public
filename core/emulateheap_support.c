@@ -4,8 +4,8 @@
 HANDLE hheapKernel = 0;
 
 PDB pdbCur;
-PDB* ppdbCur = &pdbCur;
-PDB** pppdbCur = &ppdbCur;
+PDB *ppdbCur = &pdbCur;
+PDB **pppdbCur = &ppdbCur;
 
 /***SN	PageCommit - commit physical pages to a specified linear address
  *
@@ -54,7 +54,7 @@ PDB** pppdbCur = &ppdbCur;
 ULONG EXTERNAL
 PageCommit(ULONG page, ULONG npages, ULONG hpd, ULONG pagerdata, ULONG flags)
 {
-    return (ULONG_PTR)VirtualAlloc((LPVOID)(page * PAGESIZE), npages * PAGESIZE, MEM_COMMIT, PAGE_READWRITE);
+    return (ULONG_PTR) VirtualAlloc((LPVOID)(page * PAGESIZE), npages * PAGESIZE, MEM_COMMIT, PAGE_READWRITE);
 }
 
 /***SN	PageDecommit - decommit physical pages from a specific address
@@ -74,9 +74,9 @@ PageDecommit(ULONG page, ULONG npages, ULONG flags)
 {
     // PREFAST - This generates a PREFAST error asking us to use the MEM_RELEASE flag
     //           We do not want that and hence this error can be ignored.
-    return (ULONG)VirtualFree((LPVOID)(page * PAGESIZE), npages * PAGESIZE, MEM_DECOMMIT);
+    return (ULONG) VirtualFree((LPVOID)(page * PAGESIZE), npages * PAGESIZE, MEM_DECOMMIT);
 }
-
+    
 /***SN	PageReserve - allocate linear address space in the current context
  *
  *	The address range allocated by PageReserve is not backed by any
@@ -118,7 +118,7 @@ PageReserve(ULONG page, ULONG npages, ULONG flags)
         page = 0;
     }
 
-    uRet = (ULONG)VirtualAlloc((LPVOID)(page * PAGESIZE), npages * PAGESIZE, MEM_RESERVE, PAGE_READWRITE);
+    uRet = (ULONG) VirtualAlloc((LPVOID)(page * PAGESIZE), npages * PAGESIZE, MEM_RESERVE, PAGE_READWRITE);
 
     if (!uRet)
     {
@@ -138,7 +138,7 @@ PageReserve(ULONG page, ULONG npages, ULONG flags)
 ULONG EXTERNAL
 _PageFree(ULONG laddr, ULONG flags)
 {
-    return VirtualFree((LPVOID)laddr, 0, MEM_RELEASE);
+    return VirtualFree((LPVOID) laddr, 0, MEM_RELEASE);
 }
 
 
@@ -148,11 +148,11 @@ HouseCleanLogicallyDeadHandles(VOID)
     return 0;
 }
 
-CRITICAL_SECTION*
+CRITICAL_SECTION *
 NewCrst()
 {
-    CRITICAL_SECTION* lpcs = (CRITICAL_SECTION*)VirtualAlloc(0, sizeof(CRITICAL_SECTION), MEM_COMMIT, PAGE_READWRITE);
-
+    CRITICAL_SECTION *lpcs = (CRITICAL_SECTION *) VirtualAlloc(0, sizeof(CRITICAL_SECTION), MEM_COMMIT, PAGE_READWRITE);
+    
     if (lpcs)
     {
         InitializeCriticalSection(lpcs);
@@ -162,7 +162,7 @@ NewCrst()
 }
 
 VOID
-DisposeCrst(CRITICAL_SECTION* lpcs)
+DisposeCrst(CRITICAL_SECTION *lpcs)
 {
     if (lpcs)
     {
@@ -171,13 +171,13 @@ DisposeCrst(CRITICAL_SECTION* lpcs)
     }
 }
 
-DWORD KERNENTRY
+DWORD KERNENTRY 
 GetAppCompatFlags(VOID)
 {
     return 0;
 }
 
-VOID APIENTRY
+VOID APIENTRY 
 MakeCriticalSectionGlobal(LPCRITICAL_SECTION lpcsCriticalSection)
 {
 }
@@ -189,24 +189,24 @@ ReadProcessMemoryFromPDB(
     LPVOID lpBuffer,
     DWORD nSize,
     LPDWORD lpNumberOfBytesRead
-)
+    )
 {
     return ReadProcessMemory(
-        GetCurrentProcess(),
+        GetCurrentProcess(), 
         lpBaseAddress,
         lpBuffer,
         nSize,
         lpNumberOfBytesRead);
 }
 
-BOOL WINAPI
+BOOL WINAPI 
 vHeapFree(
-    HANDLE hHeap,
-    DWORD dwFlags,
+    HANDLE hHeap, 
+    DWORD dwFlags, 
     LPVOID lpMem
-)
+    )
 {
-    return HeapFree((HHEAP)hHeap, dwFlags, (LPSTR)lpMem);
+    return HeapFree((HHEAP)hHeap, dwFlags, (LPSTR) lpMem);
 }
 
 BOOL
@@ -224,15 +224,16 @@ _GetProcessHeap(void)
     return GetCurrentPdb()->hheapLocal;
 }
 
-BOOL
-_IsOurHeap(HANDLE hHeap)
+BOOL 
+_IsOurHeap(HANDLE hHeap) 
 {
     if (!IsBadReadPtr(hHeap, sizeof(HANDLE)))
     {
-        return ((struct heapinfo_s*)hHeap)->hi_signature == HI_SIGNATURE;
+        return ((struct heapinfo_s *) hHeap)->hi_signature == HI_SIGNATURE;
     }
     else
     {
         return FALSE;
     }
 }
+

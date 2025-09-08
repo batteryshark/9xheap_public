@@ -1,0 +1,174 @@
+--- old/emulateheap_heap.c	2020-09-26 04:20:57.000000000 -0400
++++ core/emulateheap_heap.c	2025-09-08 02:45:33.530252800 -0400
+@@ -34,7 +34,7 @@
+  *  6/94       BrianSm	  Decommit pages within free heap blocks
+  */
+ #ifdef WIN32
+-#include <EmulateHeap_kernel32.h>
++#include "emulateHeap_kernel32.h"
+ #endif
+ 
+ #pragma hdrstop("kernel32.pch")
+@@ -614,7 +614,7 @@
+      *	If the previous block is free, coalesce with it.
+      */
+     if (pblock->fh_size & HP_PREVFREE) {
+-	(unsigned)pblock = *((unsigned *)pblock - 1); /* point to prev block */
++  pblock = (struct freeheap_s*)*((unsigned*)pblock - 1); /* point to prev block */
+ 	cb += hpSize(pblock);
+ 
+ 	/*
+@@ -749,10 +749,10 @@
+      */
+     cbreserve = max(((cb + PAGESIZE*2) & ~PAGEMASK), hpCBRESERVE);
+ 
+-    if (((unsigned)pseg =
++ if ((pseg = (struct heapseg_s*)
+ #ifdef WIN32
+ 	PageReserve(((unsigned)hheap >= MINSHAREDLADDR) ? PR_SHARED : PR_PRIVATE,
+-		    cbreserve / PAGESIZE, PR_STATIC)) == -1) {
++			cbreserve / PAGESIZE, PR_STATIC)) == (ULONG)-1) {
+ 
+ 	mmError(ERROR_NOT_ENOUGH_MEMORY, "HPAlloc: reserve failed\n");
+ #else
+@@ -2192,4 +2192,4 @@
+ }
+ #endif
+ 
+-#endif /* HPDEBUG */
++#endif /* HPDEBUG */
+\ No newline at end of file
+--- old/emulateheap_heap.h	2020-09-26 04:20:57.000000000 -0400
++++ core/emulateheap_heap.h	2025-09-08 02:43:22.301736800 -0400
+@@ -408,7 +408,7 @@
+ /*
+  * Exported heap functions
+  */
+-extern HHEAP INTERNAL HPInit(void *hheap, void *pmem, unsigned long cbreserve,
++extern HHEAP INTERNAL HPInit(struct heapinfo_s* hheap, struct heapinfo_s* pmem, unsigned long cbreserve,
+ 			     unsigned long flags);
+ extern void * INTERNAL HPAlloc(HHEAP hheap, unsigned long cb,
+ 			     unsigned long flags);
+@@ -425,13 +425,13 @@
+ /*
+  * Local heap functions
+  */
+-extern void INTERNAL hpFreeSub(HHEAP hheap, void *pblock, unsigned cb,
++extern void INTERNAL hpFreeSub(HHEAP hheap, struct freeheap_s* pblock, unsigned cb,
+ 			       unsigned flags);
+ extern unsigned INTERNAL hpCommit(unsigned page, int npages, unsigned flags);
+ extern unsigned INTERNAL hpCarve(HHEAP hheap, struct freeheap_s *pfh,
+ 				unsigned cb, unsigned flags);
+ #ifdef WIN32
+-extern unsigned INTERNAL hpTakeSem(HHEAP hheap, void *pbh, unsigned flags);
++extern unsigned INTERNAL hpTakeSem(HHEAP hheap, struct busyheap_s* pbh, unsigned flags);
+ extern void INTERNAL hpClearSem(HHEAP hheap, unsigned flags);
+ #else
+ extern unsigned INTERNAL hpTakeSem2(HHEAP hheap, void *pbh);
+@@ -466,4 +466,4 @@
+ #define mmError(rc, string) SetError(rc)
+ #define mmAssert(exp, psz)
+ #endif
+-#endif
++#endif
+\ No newline at end of file
+--- old/emulateheap_kernel32.h	2020-09-26 04:20:57.000000000 -0400
++++ core/emulateheap_kernel32.h	2025-09-08 02:42:23.568094000 -0400
+@@ -37,7 +37,7 @@
+ #ifndef _KERNEL32_H_
+ #define _KERNEL32_H_
+ 
+-#include "windows.h"
++#include <windows.h>
+ 
+ #define INTERNAL
+ #define EXTERNAL
+@@ -153,7 +153,7 @@
+ #define GetCurrentPdb() (*pppdbCur)
+ 
+ extern HANDLE hheapKernel;
+-extern HANDLE HeapCreate(DWORD flOptions, SIZE_T dwInitialSize, SIZE_T dwMaximumSize);
++extern HANDLE APIENTRY HeapCreate(DWORD flOptions, DWORD dwInitialSize, DWORD dwMaximumSize);
+ extern DWORD APIENTRY HeapSize(HHEAP hheap, DWORD flags, LPSTR lpMem);
+ extern BOOL APIENTRY HeapFreeInternal(HHEAP hheap, DWORD flags, LPSTR lpMem);
+ 
+@@ -165,4 +165,20 @@
+     #define WINBASEAPI 
+ #endif
+ 
+-#endif // _KERNEL32_H_
++extern BOOL _IsOurHeap(HANDLE hHeap);
++extern BOOL APIENTRY _HeapDestroy(HHEAP hHeap);
++extern BOOL _IsOurLocalHeap(HANDLE hMem);
++extern HANDLE APIENTRY LocalFreeNG(HANDLE hMem);
++extern HANDLE APIENTRY LocalAllocNG(UINT dwFlags, UINT dwBytes);
++extern HANDLE APIENTRY LocalReAlloc(HANDLE hMem, UINT dwBytes, UINT dwFlags);
++extern LPVOID APIENTRY LocalLock(HANDLE hMem);
++extern BOOL APIENTRY LocalUnlock(HANDLE hMem);
++extern UINT APIENTRY LocalSize(HANDLE hMem);
++extern UINT APIENTRY LocalFlags(HANDLE hMem);
++extern HANDLE APIENTRY LocalHandle(PVOID pMem);
++extern LPVOID APIENTRY HeapAlloc(HANDLE hHeap, DWORD dwFlags, DWORD dwBytes);
++extern LPVOID APIENTRY HeapReAlloc(HANDLE hHeap, DWORD dwFlags, LPSTR lpMem, DWORD dwBytes);
++extern BOOL _IsOnOurHeap(LPCVOID lpMem);
++extern BOOL _HeapInit();
++
++#endif // _KERNEL32_H_
+\ No newline at end of file
+--- old/emulateheap_lmem.c	2020-09-26 04:20:57.000000000 -0400
++++ core/emulateheap_lmem.c	2025-09-08 02:41:22.123512600 -0400
+@@ -14,7 +14,8 @@
+ //	       AtsushiK   Toolhelp
+ //  15-Feb-94  JonT       Code cleanup and precompiled headers
+ 
+-#include <EmulateHeap_kernel32.h>
++#include "mingw_compat.h"
++#include "emulateHeap_kernel32.h"
+ #pragma hdrstop("kernel32.pch")
+ 
+ #include <tlhelp32.h>
+@@ -22,7 +23,7 @@
+ 
+ #define GACF_HEAPSLACK 0x400000	// Copied from windows.h (16-bit)
+ 
+-SetFile();
++// SetFile(); // Removed - not needed for MinGW build
+ /*
+  *  Structure and equates for LocalAlloc handle management.  Some things
+  *  to remember:
+@@ -1168,7 +1169,7 @@
+      *	VirtualAlloc for committing so we don't get zero-initialized stuff
+      *	and also we can commit fixed pages and reserve shared memory.
+      */
+-    if (((ULONG)pmem =
++ if ((pmem = (PVOID)
+ 	 PageReserve((flOptions & HEAP_SHARED) ? PR_SHARED : PR_PRIVATE,
+ 		   dwMaximumSize / PAGESIZE,
+ 		   PR_STATIC |
+@@ -1186,7 +1187,7 @@
+     #if HEAP_GENERATE_EXCEPTIONS - HP_EXCEPT
+     # error HEAP_GENERATE_EXCEPTIONS != HP_EXCEPT
+     #endif
+-    if (((PVOID)rc = HPInit(pmem, pmem, dwMaximumSize,
++ if ((rc = (HHEAP)HPInit(pmem, pmem, dwMaximumSize,
+ 			    (flOptions &
+ 			     (HP_EXCEPT|HP_NOSERIALIZE|HP_GROWABLE)))) == 0) {
+ 	goto free;
+--- old/emulateheap_support.c	2020-09-26 04:20:57.000000000 -0400
++++ core/emulateheap_support.c	2025-09-08 02:39:19.171931900 -0400
+@@ -1,4 +1,5 @@
+-#include "EmulateHeap_kernel32.h"
++#include "mingw_compat.h"
++#include "emulateHeap_kernel32.h"
+ 
+ HANDLE hheapKernel = 0;
+ 
+@@ -141,7 +142,7 @@
+ }
+ 
+ 
+-KERNENTRY 
++int KERNENTRY
+ HouseCleanLogicallyDeadHandles(VOID)
+ {
+     return 0;
